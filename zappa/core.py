@@ -550,9 +550,9 @@ class Zappa:
             if minify:
                 # Related: https://github.com/Miserlou/Zappa/issues/744
                 excludes = ZIP_EXCLUDES + exclude + [split_venv[-1]]
-                copytree(cwd, temp_project_path, metadata=False, symlinks=False, ignore=shutil.ignore_patterns(*excludes))
+                copytree(cwd, temp_project_path, metadata=True, symlinks=False, ignore=shutil.ignore_patterns(*excludes))
             else:
-                copytree(cwd, temp_project_path, metadata=False, symlinks=False)
+                copytree(cwd, temp_project_path, metadata=True, symlinks=False)
             for glob_path in exclude_glob:
                 for path in glob.glob(os.path.join(temp_project_path, glob_path)):
                     try:
@@ -716,9 +716,13 @@ class Zappa:
                 os.chmod(os.path.join(root, filename),  0o755)
 
                 if archive_format == 'zip':
+                    # Get the file modification time and use it in the zip info
+                    mtime = os.path.getmtime(os.path.join(root, filename))
+                    date_time = time.localtime(mtime)[:6]
+
                     # Actually put the file into the proper place in the zip
                     # Related: https://github.com/Miserlou/Zappa/pull/716
-                    zipi = zipfile.ZipInfo(os.path.join(root.replace(temp_project_path, '').lstrip(os.sep), filename))
+                    zipi = zipfile.ZipInfo(os.path.join(root.replace(temp_project_path, '').lstrip(os.sep), filename), date_time=date_time)
                     zipi.create_system = 3
                     zipi.external_attr = 0o755 << int(16) # Is this P2/P3 functional?
                     with open(os.path.join(root, filename), 'rb') as f:
